@@ -378,11 +378,11 @@
             const isZenith = sunAngleDeg >= 88.5;
             const isOnFace = !isZenith && sunAngleDeg >= FACE_SLOPE_DEG;
 
-            let statusMsg = `Sombra no deserto: <strong>${realExtS}m</strong> (+ ${realHalfBase}m da meia-base)`;
+            let statusMsg = `Sombra no deserto: <strong>${realExtS}m</strong> (sombra a ${realHalfBase}m da meia-base)`;
             if (isZenith) {
                 statusMsg = `<span class="status-zenith">☀ Sol a pino (90°): Nenhuma sombra projetada!</span>`;
             } else if (isOnFace) {
-                statusMsg = `<span class="status-face">◢ Sombra apenas na própria face da pirâmide (ainda não apareceu no chão)</span>`;
+                statusMsg = `<span class="status-face">Sombra apenas na própria face da pirâmide (ainda não apareceu no chão)</span>`;
             }
 
             angleValText.textContent = `${sunAngleDeg.toFixed(1)}°`;
