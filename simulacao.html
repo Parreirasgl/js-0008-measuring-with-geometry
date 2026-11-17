@@ -68,7 +68,7 @@
             cursor: pointer;
         }
         button {
-            margin-top: 6px;
+            margin-top: 4px;
             padding: 9px 12px;
             background: #fbbf24;
             color: #0f172a;
@@ -79,6 +79,14 @@
             transition: background 0.2s;
         }
         button:hover { background: #f59e0b; }
+
+        #toggle-opacity {
+            background: #38bdf8;
+            color: #0f172a;
+        }
+        #toggle-opacity:hover {
+            background: #0ea5e9;
+        }
         
         #legend {
             margin-top: 14px;
@@ -130,7 +138,7 @@
     <a href="index.html" class="home-link">⌂ Voltar à Página Inicial</a>
 
     <div id="ui-panel">
-        <h1>Simulação Realista (Pirâmide Opaca)</h1>
+        <h1 id="sim-title">Simulação 3D — Pirâmide Opaca</h1>
         <p>Acompanhe o Sol partindo do topo (90° — sem sombra) até afundar exatamente na borda do deserto (0°), reiniciando o ciclo em seguida.</p>
         
         <div class="formula-box" id="math-output">
@@ -144,10 +152,12 @@
             </label>
             <input type="range" id="sun-slider" min="0" max="90" step="0.5" value="90">
             <button id="toggle-anim">Pausar Movimento do Sol</button>
+            <button id="toggle-opacity">Deixar Pirâmide Transparente</button>
         </div>
 
         <div id="legend">
             <div><span class="dot" style="background:#ef4444;"></span>Sombra da Pirâmide fora da base (S<sub>ext</sub>)</div>
+            <div><span class="dot" style="background:#f97316;"></span>Sombra interna / Meia-base (modo transparente)</div>
             <div><span class="dot" style="background:#38bdf8;"></span>Sombra do Bastão (s)</div>
             <div><span class="dot" style="background:#10b981;"></span>Sombra de Tales (1,70m)</div>
         </div>
@@ -159,7 +169,7 @@
 
         // Constantes de proporção entre a órbita do Sol e a borda do chão
         const SUN_DIST = 85;
-        const GROUND_HALF_SIZE = SUN_DIST; // Aresta do chão fica exatamente em X = -85 e X = +85
+        const GROUND_HALF_SIZE = SUN_DIST;
 
         // 1. CENA, CÂMERA E RENDERIZADOR
         const scene = new THREE.Scene();
@@ -206,7 +216,7 @@
         );
         scene.add(sunMesh);
 
-        // 3. CHÃO DO DESERTO (Borda alinhada exatamente com o ponto onde o Sol afunda)
+        // 3. CHÃO DO DESERTO
         const desert = new THREE.Mesh(
             new THREE.PlaneGeometry(GROUND_HALF_SIZE * 2, GROUND_HALF_SIZE * 2),
             new THREE.MeshStandardMaterial({ 
@@ -219,7 +229,7 @@
         desert.receiveShadow = true;
         scene.add(desert);
 
-        // 4. PIRÂMIDE OPACA REALISTA
+        // 4. PIRÂMIDE (OPACA / TRANSPARENTE)
         const PYRAMID_HEIGHT = 24;
         const PYRAMID_BASE = 36;
         const HALF_BASE = PYRAMID_BASE / 2;
@@ -230,7 +240,9 @@
             color: 0xd4a359, 
             roughness: 0.78,
             metalness: 0.05,
-            flatShading: true
+            flatShading: true,
+            transparent: false,
+            opacity: 1.0
         });
         const pyramid = new THREE.Mesh(pyramidGeo, pyramidMat);
         pyramid.position.set(0, PYRAMID_HEIGHT / 2, 0);
@@ -283,6 +295,18 @@
             return new THREE.Line(geo, mat);
         }
 
+        // Eixo vertical interno da pirâmide (visível no modo transparente)
+        const internalAxisLine = createLine(0xfbbf24);
+        internalAxisLine.geometry.setFromPoints([
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(0, PYRAMID_HEIGHT, 0)
+        ]);
+        internalAxisLine.visible = false;
+
+        // Sombra interna dentro da base da pirâmide (visível no modo transparente)
+        const internalShadowLine = createLine(0xf97316);
+        internalShadowLine.visible = false;
+
         const externalShadowLine = createLine(0xef4444);
         const pyrRayLine = createLine(0xfbbf24);
 
@@ -293,21 +317,25 @@
         const talesRayLine = createLine(0xfbbf24);
 
         scene.add(
+            internalAxisLine, internalShadowLine,
             externalShadowLine, pyrRayLine,
             stickShadowLine, stickRayLine,
             talesShadowLine, talesRayLine
         );
 
         // 7. CONTROLES E CÁLCULOS EM TEMPO REAL
-        const MIN_SUN_ANGLE = 0;  // Sol toca exatamente a aresta do chão (Y = 0, X = -85)
-        const MAX_SUN_ANGLE = 90; // Sol exatamente sobre a pirâmide (Y = 85, X = 0)
+        const MIN_SUN_ANGLE = 0;
+        const MAX_SUN_ANGLE = 90;
         let sunAngleDeg = MAX_SUN_ANGLE;
         let isAnimating = true;
+        let isPyramidTransparent = false;
 
         const slider = document.getElementById('sun-slider');
         const angleValText = document.getElementById('angle-val');
         const mathOutput = document.getElementById('math-output');
         const toggleBtn = document.getElementById('toggle-anim');
+        const toggleOpacityBtn = document.getElementById('toggle-opacity');
+        const simTitle = document.getElementById('sim-title');
 
         slider.addEventListener('input', (e) => {
             isAnimating = false;
@@ -321,16 +349,35 @@
             toggleBtn.textContent = isAnimating ? "Pausar Movimento do Sol" : "Retomar Movimento do Sol";
         });
 
+        toggleOpacityBtn.addEventListener('click', () => {
+            isPyramidTransparent = !isPyramidTransparent;
+            pyramidMat.transparent = isPyramidTransparent;
+            pyramidMat.opacity = isPyramidTransparent ? 0.30 : 1.0;
+            pyramidMat.depthWrite = !isPyramidTransparent;
+            pyramidMat.needsUpdate = true;
+
+            internalAxisLine.visible = isPyramidTransparent;
+
+            if (isPyramidTransparent) {
+                toggleOpacityBtn.textContent = "Deixar Pirâmide Opaca";
+                simTitle.textContent = "Simulação 3D — Pirâmide Transparente";
+            } else {
+                toggleOpacityBtn.textContent = "Deixar Pirâmide Transparente";
+                simTitle.textContent = "Simulação 3D — Pirâmide Opaca";
+            }
+
+            updateGeometry();
+        });
+
         function updateGeometry() {
             const rad = THREE.MathUtils.degToRad(sunAngleDeg);
 
-            // Em 0°, sunX = -85 (aresta esquerda do plano) e sunY = 0 (nível do chão)
             const sunX = -Math.cos(rad) * SUN_DIST;
             const sunY = Math.sin(rad) * SUN_DIST;
             sunLight.position.set(sunX, sunY, 0);
             sunMesh.position.copy(sunLight.position);
 
-            // Transição suave de cores ao pôr do sol (abaixo de 28°)
+            // Transição suave de cores ao pôr do sol
             const duskFactor = THREE.MathUtils.clamp((28 - sunAngleDeg) / 28, 0, 1);
             scene.background.lerpColors(daySkyColor, duskSkyColor, duskFactor);
             scene.fog.color.lerpColors(dayFogColor, duskFogColor, duskFactor);
@@ -338,7 +385,6 @@
             ambientLight.intensity = 0.45 - duskFactor * 0.25;
             sunMesh.material.color.setHex(duskFactor > 0.35 ? 0xff6a1a : 0xffdd44);
 
-            // Cálculo seguro para ângulos próximos a 0° ou 90°
             const safeAngle = Math.max(sunAngleDeg, 0.5);
             const safeRad = THREE.MathUtils.degToRad(safeAngle);
 
@@ -346,19 +392,36 @@
             const stickShadowLen = sunAngleDeg >= 89.9 ? 0 : STICK_HEIGHT / Math.tan(safeRad);
             const talesShadowLen = sunAngleDeg >= 89.9 ? 0 : TALES_HEIGHT / Math.tan(safeRad);
 
-            // Limita visualmente as linhas na aresta oposta do deserto (+GROUND_HALF_SIZE)
             const clampedPyrTipX = Math.min(totalPyrShadow, GROUND_HALF_SIZE);
             const clampedStickTipX = Math.min(stickPos.x + stickShadowLen, GROUND_HALF_SIZE);
             const clampedTalesTipX = Math.min(talesPos.x + talesShadowLen, GROUND_HALF_SIZE);
 
+            const pyrCenter = new THREE.Vector3(0, 0.2, 0);
             const pyrTop = new THREE.Vector3(0, PYRAMID_HEIGHT, 0);
             const pyrEdge = new THREE.Vector3(HALF_BASE, 0.2, 0);
             const pyrTip = new THREE.Vector3(clampedPyrTipX, 0.2, 0);
 
+            // Linha da sombra interna (quando transparente)
+            if (isPyramidTransparent && totalPyrShadow > 0.05 && sunAngleDeg > 0.5) {
+                const internalTipX = Math.min(totalPyrShadow, HALF_BASE);
+                internalShadowLine.visible = true;
+                internalShadowLine.geometry.setFromPoints([
+                    pyrCenter,
+                    new THREE.Vector3(internalTipX, 0.2, 0)
+                ]);
+            } else {
+                internalShadowLine.visible = false;
+            }
+
+            // Linha da sombra externa e raio solar
             if (totalPyrShadow > HALF_BASE && sunAngleDeg > 0.5) {
                 externalShadowLine.visible = true;
                 pyrRayLine.visible = true;
                 externalShadowLine.geometry.setFromPoints([pyrEdge, pyrTip]);
+                pyrRayLine.geometry.setFromPoints([pyrTop, pyrTip]);
+            } else if (isPyramidTransparent && totalPyrShadow > 0.05 && sunAngleDeg > 0.5) {
+                externalShadowLine.visible = false;
+                pyrRayLine.visible = true;
                 pyrRayLine.geometry.setFromPoints([pyrTop, pyrTip]);
             } else {
                 externalShadowLine.visible = false;
@@ -435,7 +498,6 @@
 
             if (isAnimating) {
                 sunAngleDeg -= 0.08;
-                // Ao tocar a aresta da superfície (0°), salta imediatamente de volta para o topo (90°)
                 if (sunAngleDeg <= MIN_SUN_ANGLE) {
                     sunAngleDeg = MAX_SUN_ANGLE;
                 }
