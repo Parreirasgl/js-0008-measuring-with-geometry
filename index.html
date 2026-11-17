@@ -1,115 +1,102 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tales de Mileto — A Lógica Matemática</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            color: #f8fafc;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .container {
-            max-width: 760px;
-            background: rgba(30, 41, 59, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 40px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-        .badge {
-            display: inline-block;
-            background: rgba(251, 191, 36, 0.15);
-            color: #fbbf24;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            margin-bottom: 16px;
-            letter-spacing: 0.5px;
-        }
-        h1 {
-            font-size: 2rem;
-            color: #f8fafc;
-            margin-bottom: 20px;
-            line-height: 1.2;
-        }
-        h2 {
-            font-size: 1.2rem;
-            color: #38bdf8;
-            margin: 24px 0 10px 0;
-        }
-        p {
-            color: #cbd5e1;
-            line-height: 1.7;
-            margin-bottom: 16px;
-            font-size: 1.02rem;
-        }
-        .formula-card {
-            background: rgba(15, 23, 42, 0.8);
-            border-left: 4px solid #fbbf24;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 24px 0;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 1.1rem;
-            color: #e2e8f0;
-        }
-        .formula-card strong { color: #fbbf24; }
-        .nav-footer {
-            margin-top: 36px;
-            display: flex;
-            justify-content: flex-end;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 24px;
-        }
-        .btn-next {
-            background: #fbbf24;
-            color: #0f172a;
-            text-decoration: none;
-            padding: 14px 28px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 1rem;
-            transition: transform 0.2s, background 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-next:hover {
-            background: #f59e0b;
-            transform: translateY(-2px);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tales de Mileto — A Lógica Matemática</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      overflow-x: hidden;
+    }
+
+    .page-view {
+      animation: fadeInPage 0.22s ease-out;
+    }
+
+    @keyframes fadeInPage {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
 </head>
-<body>
-    <div class="container">
-        <span class="badge">HISTÓRIA DA GEOMETRIA • SÉCULO VI a.C.</span>
-        <h1>Como Tales de Mileto mediu a Grande Pirâmide sem escalá-la?</h1>
-        
-        <p>Quando o filósofo e matemático grego Tales de Mileto visitou o Egito, os sacerdotes locais o desafiaram a descobrir a altura da Grande Pirâmide de Quéops. Naquela época, não existiam instrumentos ópticos ou formas diretas de medir o topo a partir do chão.</p>
+<body class="min-h-screen flex flex-col py-6 px-4 sm:px-6 lg:px-8">
 
-        <h2>1. O Princípio da Semelhança de Triângulos</h2>
-        <p>Tales percebeu que os raios solares atingem a Terra de forma praticamente paralela. Assim, qualquer objeto fincado verticalmente no solo forma um triângulo retângulo com sua própria sombra, e todos esses triângulos são proporcionais no mesmo instante do dia.</p>
+  <main class="page-view max-w-4xl w-full mx-auto flex-1 flex flex-col justify-center gap-6">
+    <section class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 sm:p-12 md:p-14">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-sm font-semibold mb-6">
+        <span>História da Geometria</span>
+        <span class="text-blue-300">•</span>
+        <span>Século VI a.C.</span>
+      </div>
 
-        <div class="formula-card">
-            Altura da Pirâmide (<strong>H</strong>) / Sombra da pirâmide (<strong>S</strong>) = Altura do Bastão (<strong>h</strong>) / Sombra do Bastão (<strong>s</strong>)
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-6">
+        Como Tales de Mileto mediu a Grande Pirâmide sem escalá-la?
+      </h1>
+
+      <p class="text-lg sm:text-xl text-slate-700 font-medium leading-relaxed mb-8">
+        Quando o filósofo e matemático grego Tales de Mileto visitou o Egito, os sacerdotes locais o desafiaram a descobrir a altura da Grande Pirâmide de Quéops. Naquela época, não existiam instrumentos ópticos ou formas diretas de medir o topo a partir do chão.
+      </p>
+
+      <!-- Bloco 1 -->
+      <div class="mb-8">
+        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-3">
+          1. O Princípio da Semelhança de Triângulos
+        </h2>
+        <p class="text-base sm:text-lg text-slate-700 leading-relaxed mb-5">
+          Tales percebeu que os raios solares atingem a Terra de forma praticamente paralela. Assim, qualquer objeto fincado verticalmente no solo forma um triângulo retângulo com sua própria sombra, e todos esses triângulos são proporcionais no mesmo instante do dia.
+        </p>
+
+        <div class="bg-blue-50/80 border border-blue-200 rounded-2xl p-6 sm:p-8 text-center">
+          <span class="inline-block font-mono text-base sm:text-xl md:text-2xl font-extrabold text-blue-800 tracking-tight">
+            Altura da Pirâmide (H) ÷ Sombra (S) = Altura do Bastão (h) ÷ Sombra (s)
+          </span>
         </div>
+      </div>
 
-        <h2>2. O Truque do Ângulo de 45° e o Obstáculo Interno</h2>
-        <p>Para simplificar a conta, Tales cravou um bastão vertical na areia e esperou o momento exato do dia em que o comprimento da sombra do bastão se tornou <strong>exatamente igual à altura do próprio bastão</strong> (quando o Sol atinge 45° de inclinação).</p>
-        <p>No entanto, havia um detalhe crucial: a sombra da pirâmide começa no seu <strong>centro geométrico interno</strong>, e não na borda externa de pedra. Portanto, a sombra total (<strong>S</strong>) é a soma de metade da base da pirâmide (<strong>B/2</strong>) mais a sombra visível projetada fora dela na areia.</p>
+      <!-- Bloco 2 -->
+      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6 sm:p-8">
+        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-3">
+          2. O Truque do Ângulo de 45° e o Obstáculo Interno
+        </h2>
+        <p class="text-base sm:text-lg text-slate-700 leading-relaxed mb-4">
+          Para simplificar a conta, Tales cravou um bastão vertical na areia e esperou o momento exato do dia em que o comprimento da sombra do bastão se tornou <strong class="text-slate-900 font-bold">exatamente igual à altura do próprio bastão</strong> (quando o Sol atinge 45° de inclinação).
+        </p>
+        <p class="text-base sm:text-lg text-slate-700 leading-relaxed">
+          No entanto, havia um detalhe crucial: a sombra da pirâmide começa no seu <strong class="text-blue-800 font-bold">centro geométrico interno</strong>, e não na borda externa de pedra. Portanto, a sombra total (<strong class="text-slate-900 font-bold">S</strong>) é a soma de metade da base da pirâmide (<strong class="text-slate-900 font-bold">B/2</strong>) mais a sombra visível projetada fora dela na areia.
+        </p>
+      </div>
+    </section>
 
-        <div class="nav-footer">
-            <a href="instrucoes.html" class="btn-next">Próxima Página: Instruções de Uso →</a>
-        </div>
-    </div>
+    <footer class="flex justify-end">
+      <a
+        href="instrucoes.html"
+        class="inline-flex items-center justify-center gap-3 px-7 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-base sm:text-lg shadow-sm hover:shadow transition-all"
+      >
+        <span>Próxima página: Instruções de Uso</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd" />
+        </svg>
+      </a>
+    </footer>
+  </main>
+
 </body>
 </html>
