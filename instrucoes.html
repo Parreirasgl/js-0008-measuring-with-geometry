@@ -1,126 +1,117 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instruções — Simulador 3D de Tales</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            color: #f8fafc;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .container {
-            max-width: 720px;
-            background: rgba(30, 41, 59, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 36px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-        .badge {
-            display: inline-block;
-            background: rgba(56, 189, 248, 0.15);
-            color: #38bdf8;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            margin-bottom: 14px;
-        }
-        h1 {
-            font-size: 1.8rem;
-            margin-bottom: 20px;
-        }
-        .grid-instructions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            margin: 20px 0;
-        }
-        .card {
-            background: rgba(15, 23, 42, 0.6);
-            padding: 18px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.08);
-        }
-        .card h3 {
-            color: #fbbf24;
-            font-size: 1rem;
-            margin-bottom: 6px;
-        }
-        .card p {
-            color: #cbd5e1;
-            font-size: 0.92rem;
-            line-height: 1.45;
-        }
-        .nav-footer {
-            margin-top: 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 20px;
-        }
-        .btn-back {
-            color: #94a3b8;
-            text-decoration: none;
-            font-size: 0.95rem;
-        }
-        .btn-back:hover { color: #f8fafc; }
-        .btn-next {
-            background: #38bdf8;
-            color: #0f172a;
-            text-decoration: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 1rem;
-            transition: transform 0.2s, background 0.2s;
-        }
-        .btn-next:hover {
-            background: #0ea5e9;
-            transform: translateY(-2px);
-        }
-        @media (max-width: 600px) {
-            .grid-instructions { grid-template-columns: 1fr; }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Instruções — Simulador 3D de Tales</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      overflow-x: hidden;
+    }
+
+    .page-view {
+      animation: fadeInPage 0.22s ease-out;
+    }
+
+    @keyframes fadeInPage {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
 </head>
-<body>
-    <div class="container">
-        <span class="badge">GUIA RÁPIDO</span>
-        <h1>Como usar a Simulação 3D</h1>
+<body class="min-h-screen flex flex-col py-6 px-4 sm:px-6 lg:px-8">
 
-        <div class="grid-instructions">
-            <div class="card">
-                <h3>1. Ver por dentro da Pirâmide</h3>
-                <p>Clique no botão <strong>"Deixar Pirâmide Transparente"</strong> para ver o centro e a sombra interna. Clique novamente para deixá-la opaca.</p>
-            </div>
-            <div class="card">
-                <h3>2. Controlar o Sol</h3>
-                <p>Arraste a barra no painel para mudar a posição do Sol ou clique em <strong>"Pausar Movimento do Sol"</strong> para parar a animação.</p>
-            </div>
-            <div class="card">
-                <h3>3. Girar e Aproximar</h3>
-                <p>Clique e arraste com o mouse para girar a câmera. Use a rodinha (scroll) para aproximar ou afastar.</p>
-            </div>
-            <div class="card">
-                <h3>4. Observar as Medidas</h3>
-                <p>Acompanhe os valores no painel. Quando o Sol estiver em <strong>45.0°</strong>, a altura e a sombra terão o mesmo tamanho.</p>
-            </div>
+  <main class="page-view max-w-4xl w-full mx-auto flex-1 flex flex-col justify-center gap-6">
+    <section class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 sm:p-12 md:p-14">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-sm font-semibold mb-6">
+        <span>Guia Rápido</span>
+        <span class="text-indigo-300">•</span>
+        <span>Controles</span>
+      </div>
+
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-6">
+        Como usar a Simulação 3D
+      </h1>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6">
+          <h2 class="text-lg font-bold text-blue-800 mb-2">
+            1. Ver por dentro da Pirâmide
+          </h2>
+          <p class="text-base text-slate-700 leading-relaxed">
+            Clique no botão <strong class="text-slate-900 font-semibold">"Deixar Pirâmide Transparente"</strong> para ver o centro e a sombra interna. Clique novamente para deixá-la opaca.
+          </p>
         </div>
 
-        <div class="nav-footer">
-            <a href="index.html" class="btn-back">← Voltar à Explicação</a>
-            <a href="simulacao.html" class="btn-next">Abrir Simulação 3D →</a>
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6">
+          <h2 class="text-lg font-bold text-indigo-800 mb-2">
+            2. Controlar o Sol
+          </h2>
+          <p class="text-base text-slate-700 leading-relaxed">
+            Arraste a barra no painel para mudar a posição do Sol ou clique em <strong class="text-slate-900 font-semibold">"Pausar Movimento do Sol"</strong> para parar a animação.
+          </p>
         </div>
-    </div>
+
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6">
+          <h2 class="text-lg font-bold text-emerald-800 mb-2">
+            3. Girar e Aproximar
+          </h2>
+          <p class="text-base text-slate-700 leading-relaxed">
+            Clique e arraste com o mouse para girar a câmera. Use a rodinha (scroll) para aproximar ou afastar.
+          </p>
+        </div>
+
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6">
+          <h2 class="text-lg font-bold text-blue-800 mb-2">
+            4. Observar as Medidas
+          </h2>
+          <p class="text-base text-slate-700 leading-relaxed">
+            Acompanhe os valores no painel. Quando o Sol estiver em <strong class="text-slate-900 font-semibold">45.0°</strong>, a altura e a sombra terão o mesmo tamanho.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="flex flex-wrap items-center justify-between gap-4">
+      <a
+        href="index.html"
+        class="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-base shadow-sm transition-all"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clip-rule="evenodd" />
+        </svg>
+        <span>Voltar à Explicação</span>
+      </a>
+
+      <a
+        href="simulacao.html"
+        class="inline-flex items-center justify-center gap-3 px-7 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-base sm:text-lg shadow-sm hover:shadow transition-all"
+      >
+        <span>Abrir Simulação 3D</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd" />
+        </svg>
+      </a>
+    </footer>
+  </main>
+
 </body>
 </html>
