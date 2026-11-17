@@ -7,6 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.137.5/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.137.5/examples/js/controls/OrbitControls.js"></script>
     <style>
         *, *::before, *::after {
             box-sizing: border-box;
@@ -17,15 +19,23 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: #f8fafc;
         }
+        canvas {
+            display: block;
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+        }
         #ui-panel {
             position: absolute;
             top: 20px;
             left: 20px;
+            z-index: 10;
             background: rgba(255, 255, 255, 0.95);
             color: #0f172a;
             padding: 22px;
             border-radius: 20px;
             width: 385px;
+            max-width: calc(100vw - 40px);
             backdrop-filter: blur(8px);
             border: 1px solid #e2e8f0;
             box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
@@ -141,6 +151,7 @@
             position: absolute;
             top: 20px;
             right: 20px;
+            z-index: 10;
             background: rgba(255, 255, 255, 0.95);
             color: #334155;
             text-decoration: none;
@@ -162,14 +173,6 @@
             border-color: #cbd5e1;
         }
     </style>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
 </head>
 <body>
 
@@ -202,362 +205,371 @@
             <div><span class="dot" style="background:#ef4444;"></span>Sombra da Pirâmide fora da base (S<sub>ext</sub>)</div>
             <div><span class="dot" style="background:#f97316;"></span>Sombra interna / Meia-base (modo transparente)</div>
             <div><span class="dot" style="background:#38bdf8;"></span>Sombra do Bastão (s)</div>
-            <div><span class="dot" style="background:#10b981;"></span>Sombra de Tales (1,70m)</div>
+            <div><span class="dot" style="background:#10b981;"></span>Sombra de Tales (s<sub>t</sub>)</div>
         </div>
     </div>
 
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const mathOutput = document.getElementById('math-output');
 
-        // Constantes de proporção entre a órbita do Sol e a borda do chão
-        const SUN_DIST = 85;
-        const GROUND_HALF_SIZE = SUN_DIST;
-
-        // 1. CENA, CÂMERA E RENDERIZADOR
-        const scene = new THREE.Scene();
-        const daySkyColor = new THREE.Color(0x87ceeb);
-        const duskSkyColor = new THREE.Color(0xd97742);
-        scene.background = daySkyColor.clone();
-
-        const dayFogColor = new THREE.Color(0xd9b382);
-        const duskFogColor = new THREE.Color(0x9a4e2e);
-        scene.fog = new THREE.FogExp2(dayFogColor.getHex(), 0.0022);
-
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(25, 42, 115);
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        document.body.appendChild(renderer.domElement);
-
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.target.set(-10, 6, 4);
-
-        // 2. ILUMINAÇÃO E SOL
-        const ambientLight = new THREE.AmbientLight(0xffeebb, 0.45);
-        scene.add(ambientLight);
-
-        const sunLight = new THREE.DirectionalLight(0xfff5e0, 2.4);
-        sunLight.castShadow = true;
-        sunLight.shadow.mapSize.width = 2048;
-        sunLight.shadow.mapSize.height = 2048;
-        const d = GROUND_HALF_SIZE;
-        sunLight.shadow.camera.left = -d;
-        sunLight.shadow.camera.right = d;
-        sunLight.shadow.camera.top = d;
-        sunLight.shadow.camera.bottom = -d;
-        sunLight.shadow.bias = -0.0005;
-        scene.add(sunLight);
-
-        const sunMesh = new THREE.Mesh(
-            new THREE.SphereGeometry(2.8, 16, 16),
-            new THREE.MeshBasicMaterial({ color: 0xffdd44 })
-        );
-        scene.add(sunMesh);
-
-        // 3. CHÃO DO DESERTO
-        const desert = new THREE.Mesh(
-            new THREE.PlaneGeometry(GROUND_HALF_SIZE * 2, GROUND_HALF_SIZE * 2),
-            new THREE.MeshStandardMaterial({ 
-                color: 0xe6c280, 
-                roughness: 0.9,
-                side: THREE.DoubleSide
-            })
-        );
-        desert.rotation.x = -Math.PI / 2;
-        desert.receiveShadow = true;
-        scene.add(desert);
-
-        // 4. PIRÂMIDE (OPACA / TRANSPARENTE)
-        const PYRAMID_HEIGHT = 24;
-        const PYRAMID_BASE = 36;
-        const HALF_BASE = PYRAMID_BASE / 2;
-        const FACE_SLOPE_DEG = THREE.MathUtils.radToDeg(Math.atan2(PYRAMID_HEIGHT, HALF_BASE));
-
-        const pyramidGeo = new THREE.ConeGeometry(PYRAMID_BASE / Math.sqrt(2), PYRAMID_HEIGHT, 4);
-        const pyramidMat = new THREE.MeshStandardMaterial({ 
-            color: 0xd4a359, 
-            roughness: 0.78,
-            metalness: 0.05,
-            flatShading: true,
-            transparent: false,
-            opacity: 1.0
-        });
-        const pyramid = new THREE.Mesh(pyramidGeo, pyramidMat);
-        pyramid.position.set(0, PYRAMID_HEIGHT / 2, 0);
-        pyramid.rotation.y = Math.PI / 4;
-        pyramid.castShadow = true;
-        pyramid.receiveShadow = true;
-        scene.add(pyramid);
-
-        // 5. BASTÃO DE TALES E BONECO DE TALES (1,70m)
-        const STICK_HEIGHT = 6;      // ~3,66m
-        const TALES_HEIGHT = 2.787;  // 1,70m
-
-        const stickPos = new THREE.Vector3(10, 0, 22.5);
-        const talesPos = new THREE.Vector3(10, 0, 27);
-
-        const stick = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.15, 0.15, STICK_HEIGHT, 12),
-            new THREE.MeshStandardMaterial({ color: 0x5c3a21 })
-        );
-        stick.position.set(stickPos.x, STICK_HEIGHT / 2, stickPos.z);
-        stick.castShadow = true;
-        scene.add(stick);
-
-        const talesGroup = new THREE.Group();
-        const headRadius = 0.35;
-        const bodyHeight = TALES_HEIGHT - (headRadius * 2);
-
-        const body = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.32, 0.48, bodyHeight, 12),
-            new THREE.MeshStandardMaterial({ color: 0xf8fafc })
-        );
-        body.position.y = bodyHeight / 2;
-        body.castShadow = true;
-
-        const head = new THREE.Mesh(
-            new THREE.SphereGeometry(headRadius, 16, 16),
-            new THREE.MeshStandardMaterial({ color: 0xdba979 })
-        );
-        head.position.y = bodyHeight + headRadius;
-        head.castShadow = true;
-
-        talesGroup.add(body, head);
-        talesGroup.position.copy(talesPos);
-        scene.add(talesGroup);
-
-        // 6. LINHAS GEOMÉTRICAS DE MEDIÇÃO
-        function createLine(color) {
-            const mat = new THREE.LineBasicMaterial({ color: color });
-            const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
-            return new THREE.Line(geo, mat);
-        }
-
-        const internalAxisLine = createLine(0xfbbf24);
-        internalAxisLine.geometry.setFromPoints([
-            new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(0, PYRAMID_HEIGHT, 0)
-        ]);
-        internalAxisLine.visible = false;
-
-        const internalShadowLine = createLine(0xf97316);
-        internalShadowLine.visible = false;
-
-        const externalShadowLine = createLine(0xef4444);
-        const pyrRayLine = createLine(0xfbbf24);
-
-        const stickShadowLine = createLine(0x38bdf8);
-        const stickRayLine = createLine(0xfbbf24);
-
-        const talesShadowLine = createLine(0x10b981);
-        const talesRayLine = createLine(0xfbbf24);
-
-        scene.add(
-            internalAxisLine, internalShadowLine,
-            externalShadowLine, pyrRayLine,
-            stickShadowLine, stickRayLine,
-            talesShadowLine, talesRayLine
-        );
-
-        // 7. CONTROLES E CÁLCULOS EM TEMPO REAL
-        const MIN_SUN_ANGLE = 0;
-        const MAX_SUN_ANGLE = 90;
-        let sunAngleDeg = MAX_SUN_ANGLE;
-        let isAnimating = true;
-        let isPyramidTransparent = false;
-
-        const slider = document.getElementById('sun-slider');
-        const angleValText = document.getElementById('angle-val');
-        const mathOutput = document.getElementById('math-output');
-        const toggleBtn = document.getElementById('toggle-anim');
-        const toggleOpacityBtn = document.getElementById('toggle-opacity');
-        const simTitle = document.getElementById('sim-title');
-
-        slider.addEventListener('input', (e) => {
-            isAnimating = false;
-            toggleBtn.textContent = "Retomar Movimento do Sol";
-            sunAngleDeg = parseFloat(e.target.value);
-            updateGeometry();
-        });
-
-        toggleBtn.addEventListener('click', () => {
-            isAnimating = !isAnimating;
-            toggleBtn.textContent = isAnimating ? "Pausar Movimento do Sol" : "Retomar Movimento do Sol";
-        });
-
-        toggleOpacityBtn.addEventListener('click', () => {
-            isPyramidTransparent = !isPyramidTransparent;
-            pyramidMat.transparent = isPyramidTransparent;
-            pyramidMat.opacity = isPyramidTransparent ? 0.30 : 1.0;
-            pyramidMat.depthWrite = !isPyramidTransparent;
-            pyramidMat.needsUpdate = true;
-
-            internalAxisLine.visible = isPyramidTransparent;
-
-            if (isPyramidTransparent) {
-                toggleOpacityBtn.textContent = "Deixar Pirâmide Opaca";
-                simTitle.textContent = "Simulação 3D — Pirâmide Transparente";
-            } else {
-                toggleOpacityBtn.textContent = "Deixar Pirâmide Transparente";
-                simTitle.textContent = "Simulação 3D — Pirâmide Opaca";
+            if (typeof THREE === 'undefined') {
+                mathOutput.innerHTML = '<strong style="color:#dc2626;">Erro ao carregar o motor 3D. Verifique sua conexão com a internet e recarregue a página.</strong>';
+                return;
             }
 
-            updateGeometry();
-        });
+            try {
+                // Constantes de proporção entre a órbita do Sol e a borda do chão
+                const SUN_DIST = 85;
+                const GROUND_HALF_SIZE = SUN_DIST;
 
-        function updateGeometry() {
-            const rad = THREE.MathUtils.degToRad(sunAngleDeg);
+                // 1. CENA, CÂMERA E RENDERIZADOR
+                const scene = new THREE.Scene();
+                const daySkyColor = new THREE.Color(0x87ceeb);
+                const duskSkyColor = new THREE.Color(0xd97742);
+                scene.background = daySkyColor.clone();
 
-            const sunX = -Math.cos(rad) * SUN_DIST;
-            const sunY = Math.sin(rad) * SUN_DIST;
-            sunLight.position.set(sunX, sunY, 0);
-            sunMesh.position.copy(sunLight.position);
+                const dayFogColor = new THREE.Color(0xd4b48c);
+                const duskFogColor = new THREE.Color(0x9a4e2e);
+                scene.fog = new THREE.FogExp2(dayFogColor.getHex(), 0.0020);
 
-            // Transição suave de cores ao pôr do sol
-            const duskFactor = THREE.MathUtils.clamp((28 - sunAngleDeg) / 28, 0, 1);
-            scene.background.lerpColors(daySkyColor, duskSkyColor, duskFactor);
-            scene.fog.color.lerpColors(dayFogColor, duskFogColor, duskFactor);
-            sunLight.intensity = 2.4 - duskFactor * 1.6;
-            ambientLight.intensity = 0.45 - duskFactor * 0.25;
-            sunMesh.material.color.setHex(duskFactor > 0.35 ? 0xff6a1a : 0xffdd44);
+                const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                camera.position.set(25, 42, 115);
 
-            const safeAngle = Math.max(sunAngleDeg, 0.5);
-            const safeRad = THREE.MathUtils.degToRad(safeAngle);
+                const renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                document.body.appendChild(renderer.domElement);
 
-            const totalPyrShadow = sunAngleDeg >= 89.9 ? 0 : PYRAMID_HEIGHT / Math.tan(safeRad);
-            const stickShadowLen = sunAngleDeg >= 89.9 ? 0 : STICK_HEIGHT / Math.tan(safeRad);
-            const talesShadowLen = sunAngleDeg >= 89.9 ? 0 : TALES_HEIGHT / Math.tan(safeRad);
+                const controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.target.set(-10, 6, 4);
 
-            const clampedPyrTipX = Math.min(totalPyrShadow, GROUND_HALF_SIZE);
-            const clampedStickTipX = Math.min(stickPos.x + stickShadowLen, GROUND_HALF_SIZE);
-            const clampedTalesTipX = Math.min(talesPos.x + talesShadowLen, GROUND_HALF_SIZE);
+                // 2. ILUMINAÇÃO E SOL (Calibrada para não estourar o brilho em 90°)
+                const ambientLight = new THREE.AmbientLight(0xfff4e0, 0.52);
+                scene.add(ambientLight);
 
-            const pyrCenter = new THREE.Vector3(0, 0.2, 0);
-            const pyrTop = new THREE.Vector3(0, PYRAMID_HEIGHT, 0);
-            const pyrEdge = new THREE.Vector3(HALF_BASE, 0.2, 0);
-            const pyrTip = new THREE.Vector3(clampedPyrTipX, 0.2, 0);
+                const sunLight = new THREE.DirectionalLight(0xfff7e8, 0.95);
+                sunLight.castShadow = true;
+                sunLight.shadow.mapSize.width = 2048;
+                sunLight.shadow.mapSize.height = 2048;
+                const d = GROUND_HALF_SIZE;
+                sunLight.shadow.camera.left = -d;
+                sunLight.shadow.camera.right = d;
+                sunLight.shadow.camera.top = d;
+                sunLight.shadow.camera.bottom = -d;
+                sunLight.shadow.bias = -0.0005;
+                scene.add(sunLight);
 
-            // Linha da sombra interna (quando transparente)
-            if (isPyramidTransparent && totalPyrShadow > 0.05 && sunAngleDeg > 0.5) {
-                const internalTipX = Math.min(totalPyrShadow, HALF_BASE);
-                internalShadowLine.visible = true;
-                internalShadowLine.geometry.setFromPoints([
-                    pyrCenter,
-                    new THREE.Vector3(internalTipX, 0.2, 0)
-                ]);
-            } else {
-                internalShadowLine.visible = false;
-            }
+                const sunMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(2.8, 16, 16),
+                    new THREE.MeshBasicMaterial({ color: 0xffdd44 })
+                );
+                scene.add(sunMesh);
 
-            // Linha da sombra externa e raio solar
-            if (totalPyrShadow > HALF_BASE && sunAngleDeg > 0.5) {
-                externalShadowLine.visible = true;
-                pyrRayLine.visible = true;
-                externalShadowLine.geometry.setFromPoints([pyrEdge, pyrTip]);
-                pyrRayLine.geometry.setFromPoints([pyrTop, pyrTip]);
-            } else if (isPyramidTransparent && totalPyrShadow > 0.05 && sunAngleDeg > 0.5) {
-                externalShadowLine.visible = false;
-                pyrRayLine.visible = true;
-                pyrRayLine.geometry.setFromPoints([pyrTop, pyrTip]);
-            } else {
-                externalShadowLine.visible = false;
-                pyrRayLine.visible = false;
-            }
+                // 3. CHÃO DO DESERTO (Cor de terra claro)
+                const desert = new THREE.Mesh(
+                    new THREE.PlaneGeometry(GROUND_HALF_SIZE * 2, GROUND_HALF_SIZE * 2),
+                    new THREE.MeshLambertMaterial({ 
+                        color: 0xd2b086,
+                        side: THREE.DoubleSide
+                    })
+                );
+                desert.rotation.x = -Math.PI / 2;
+                desert.receiveShadow = true;
+                scene.add(desert);
 
-            // Bastão
-            if (stickShadowLen > 0.05 && sunAngleDeg > 0.5) {
-                stickShadowLine.visible = true;
-                stickRayLine.visible = true;
-                const stickTop = new THREE.Vector3(stickPos.x, STICK_HEIGHT, stickPos.z);
-                const stickBase = new THREE.Vector3(stickPos.x, 0.2, stickPos.z);
-                const stickTip = new THREE.Vector3(clampedStickTipX, 0.2, stickPos.z);
-                stickShadowLine.geometry.setFromPoints([stickBase, stickTip]);
-                stickRayLine.geometry.setFromPoints([stickTop, stickTip]);
-            } else {
-                stickShadowLine.visible = false;
-                stickRayLine.visible = false;
-            }
+                // 4. PIRÂMIDE (OPACA / TRANSPARENTE)
+                const PYRAMID_HEIGHT = 24;
+                const PYRAMID_BASE = 36;
+                const HALF_BASE = PYRAMID_BASE / 2;
+                const FACE_SLOPE_DEG = THREE.MathUtils.radToDeg(Math.atan2(PYRAMID_HEIGHT, HALF_BASE));
 
-            // Tales (1,70m)
-            if (talesShadowLen > 0.05 && sunAngleDeg > 0.5) {
-                talesShadowLine.visible = true;
-                talesRayLine.visible = true;
-                const talesTop = new THREE.Vector3(talesPos.x, TALES_HEIGHT, talesPos.z);
-                const talesBase = new THREE.Vector3(talesPos.x, 0.2, talesPos.z);
-                const talesTip = new THREE.Vector3(clampedTalesTipX, 0.2, talesPos.z);
-                talesShadowLine.geometry.setFromPoints([talesBase, talesTip]);
-                talesRayLine.geometry.setFromPoints([talesTop, talesTip]);
-            } else {
-                talesShadowLine.visible = false;
-                talesRayLine.visible = false;
-            }
+                const pyramidGeo = new THREE.ConeGeometry(PYRAMID_BASE / Math.sqrt(2), PYRAMID_HEIGHT, 4);
+                const pyramidMat = new THREE.MeshStandardMaterial({ 
+                    color: 0xc9964c, 
+                    roughness: 0.82,
+                    metalness: 0.02,
+                    flatShading: true,
+                    transparent: false,
+                    opacity: 1.0
+                });
+                const pyramid = new THREE.Mesh(pyramidGeo, pyramidMat);
+                pyramid.position.set(0, PYRAMID_HEIGHT / 2, 0);
+                pyramid.rotation.y = Math.PI / 4;
+                pyramid.castShadow = true;
+                pyramid.receiveShadow = true;
+                scene.add(pyramid);
 
-            // Conversão para metros reais
-            const scale = 6.1;
-            const realH = (PYRAMID_HEIGHT * scale).toFixed(1);
-            const realTotalS = sunAngleDeg <= 0.5 ? '∞' : (totalPyrShadow * scale).toFixed(1) + 'm';
-            const realHalfBase = (HALF_BASE * scale).toFixed(1);
-            const realExtS = sunAngleDeg <= 0.5 ? '∞' : Math.max(0, (totalPyrShadow - HALF_BASE) * scale).toFixed(1) + 'm';
+                // 5. BASTÃO DE TALES E BONECO DE TALES (1,70m)
+                const STICK_HEIGHT = 6;      // ~3,66m
+                const TALES_HEIGHT = 2.787;  // 1,70m
 
-            const realh = (STICK_HEIGHT * scale / 10).toFixed(2);
-            const reals = sunAngleDeg <= 0.5 ? '∞' : (stickShadowLen * scale / 10).toFixed(2) + 'm';
+                const stickPos = new THREE.Vector3(10, 0, 22.5);
+                const talesPos = new THREE.Vector3(10, 0, 27);
 
-            const realTalesH = (TALES_HEIGHT * scale / 10).toFixed(2);
-            const realTalesS = sunAngleDeg <= 0.5 ? '∞' : (talesShadowLen * scale / 10).toFixed(2) + 'm';
+                const stick = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.15, 0.15, STICK_HEIGHT, 12),
+                    new THREE.MeshStandardMaterial({ color: 0x5c3a21 })
+                );
+                stick.position.set(stickPos.x, STICK_HEIGHT / 2, stickPos.z);
+                stick.castShadow = true;
+                scene.add(stick);
 
-            const isZenith = sunAngleDeg >= 88.5;
-            const isSunset = sunAngleDeg <= 1.5;
-            const isOnFace = !isZenith && sunAngleDeg >= FACE_SLOPE_DEG;
+                const talesGroup = new THREE.Group();
+                const headRadius = 0.35;
+                const bodyHeight = TALES_HEIGHT - (headRadius * 2);
 
-            let statusMsg = `Sombra no deserto: <strong style="color:#0f172a;">${realExtS}</strong> (+ ${realHalfBase}m da meia-base)`;
-            if (isZenith) {
-                statusMsg = `<span class="status-zenith">☀ Sol a pino (90°): Nenhuma sombra projetada!</span>`;
-            } else if (isSunset) {
-                statusMsg = `<span class="status-face">🌇 Pôr do sol na borda do deserto (0°): Reiniciando...</span>`;
-            } else if (isOnFace) {
-                statusMsg = `<span class="status-face">◢ Sombra apenas na própria face da pirâmide (ainda não saiu no chão)</span>`;
-            }
+                const body = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.32, 0.48, bodyHeight, 12),
+                    new THREE.MeshStandardMaterial({ color: 0xf8fafc })
+                );
+                body.position.y = bodyHeight / 2;
+                body.castShadow = true;
 
-            angleValText.textContent = `${sunAngleDeg.toFixed(1)}°`;
-            mathOutput.innerHTML = `
-                <div>Tales (h<sub>T</sub>): <strong style="color:#0f172a;">${realTalesH}m</strong> | Sombra: ${realTalesS}</div>
-                <div>Bastão (h): <strong style="color:#0f172a;">${realh}m</strong> | Sombra (s): ${reals}</div>
-                <div>Pirâmide (H): <strong style="color:#0f172a;">${realH}m</strong> | Sombra Total (S): ${realTotalS}</div>
-                <div style="margin-top:8px; font-size:0.78rem; color:#475569;">
-                    ${statusMsg}
-                </div>
-            `;
-        }
+                const head = new THREE.Mesh(
+                    new THREE.SphereGeometry(headRadius, 16, 16),
+                    new THREE.MeshStandardMaterial({ color: 0xdba979 })
+                );
+                head.position.y = bodyHeight + headRadius;
+                head.castShadow = true;
 
-        function animate() {
-            requestAnimationFrame(animate);
+                talesGroup.add(body, head);
+                talesGroup.position.copy(talesPos);
+                scene.add(talesGroup);
 
-            if (isAnimating) {
-                sunAngleDeg -= 0.08;
-                if (sunAngleDeg <= MIN_SUN_ANGLE) {
-                    sunAngleDeg = MAX_SUN_ANGLE;
+                // 6. LINHAS GEOMÉTRICAS DE MEDIÇÃO
+                function createLine(color) {
+                    const mat = new THREE.LineBasicMaterial({ color: color });
+                    const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+                    return new THREE.Line(geo, mat);
                 }
-                slider.value = sunAngleDeg;
+
+                const internalAxisLine = createLine(0xfbbf24);
+                internalAxisLine.geometry.setFromPoints([
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, PYRAMID_HEIGHT, 0)
+                ]);
+                internalAxisLine.visible = false;
+
+                const internalShadowLine = createLine(0xf97316);
+                internalShadowLine.visible = false;
+
+                const externalShadowLine = createLine(0xef4444);
+                const pyrRayLine = createLine(0xfbbf24);
+
+                const stickShadowLine = createLine(0x38bdf8);
+                const stickRayLine = createLine(0xfbbf24);
+
+                const talesShadowLine = createLine(0x10b981);
+                const talesRayLine = createLine(0xfbbf24);
+
+                scene.add(
+                    internalAxisLine, internalShadowLine,
+                    externalShadowLine, pyrRayLine,
+                    stickShadowLine, stickRayLine,
+                    talesShadowLine, talesRayLine
+                );
+
+                // 7. CONTROLES E CÁLCULOS EM TEMPO REAL
+                const MIN_SUN_ANGLE = 0;
+                const MAX_SUN_ANGLE = 90;
+                let sunAngleDeg = MAX_SUN_ANGLE;
+                let isAnimating = true;
+                let isPyramidTransparent = false;
+
+                const slider = document.getElementById('sun-slider');
+                const angleValText = document.getElementById('angle-val');
+                const toggleBtn = document.getElementById('toggle-anim');
+                const toggleOpacityBtn = document.getElementById('toggle-opacity');
+                const simTitle = document.getElementById('sim-title');
+
+                slider.addEventListener('input', (e) => {
+                    isAnimating = false;
+                    toggleBtn.textContent = "Retomar Movimento do Sol";
+                    sunAngleDeg = parseFloat(e.target.value);
+                    updateGeometry();
+                });
+
+                toggleBtn.addEventListener('click', () => {
+                    isAnimating = !isAnimating;
+                    toggleBtn.textContent = isAnimating ? "Pausar Movimento do Sol" : "Retomar Movimento do Sol";
+                });
+
+                toggleOpacityBtn.addEventListener('click', () => {
+                    isPyramidTransparent = !isPyramidTransparent;
+                    pyramidMat.transparent = isPyramidTransparent;
+                    pyramidMat.opacity = isPyramidTransparent ? 0.30 : 1.0;
+                    pyramidMat.depthWrite = !isPyramidTransparent;
+                    pyramidMat.needsUpdate = true;
+
+                    internalAxisLine.visible = isPyramidTransparent;
+
+                    if (isPyramidTransparent) {
+                        toggleOpacityBtn.textContent = "Deixar Pirâmide Opaca";
+                        simTitle.textContent = "Simulação 3D — Pirâmide Transparente";
+                    } else {
+                        toggleOpacityBtn.textContent = "Deixar Pirâmide Transparente";
+                        simTitle.textContent = "Simulação 3D — Pirâmide Opaca";
+                    }
+
+                    updateGeometry();
+                });
+
+                function updateGeometry() {
+                    const rad = THREE.MathUtils.degToRad(sunAngleDeg);
+
+                    const sunX = -Math.cos(rad) * SUN_DIST;
+                    const sunY = Math.sin(rad) * SUN_DIST;
+                    sunLight.position.set(sunX, sunY, 0);
+                    sunMesh.position.copy(sunLight.position);
+
+                    // Transição suave de cores apenas no pôr do sol (abaixo de 25°)
+                    const duskFactor = THREE.MathUtils.clamp((25 - sunAngleDeg) / 25, 0, 1);
+                    scene.background.lerpColors(daySkyColor, duskSkyColor, duskFactor);
+                    scene.fog.color.lerpColors(dayFogColor, duskFogColor, duskFactor);
+                    sunLight.intensity = 0.95 - duskFactor * 0.45;
+                    ambientLight.intensity = 0.52 - duskFactor * 0.18;
+                    sunMesh.material.color.setHex(duskFactor > 0.35 ? 0xff6a1a : 0xffdd44);
+
+                    const safeAngle = Math.max(sunAngleDeg, 0.5);
+                    const safeRad = THREE.MathUtils.degToRad(safeAngle);
+
+                    const totalPyrShadow = sunAngleDeg >= 89.9 ? 0 : PYRAMID_HEIGHT / Math.tan(safeRad);
+                    const stickShadowLen = sunAngleDeg >= 89.9 ? 0 : STICK_HEIGHT / Math.tan(safeRad);
+                    const talesShadowLen = sunAngleDeg >= 89.9 ? 0 : TALES_HEIGHT / Math.tan(safeRad);
+
+                    const clampedPyrTipX = Math.min(totalPyrShadow, GROUND_HALF_SIZE);
+                    const clampedStickTipX = Math.min(stickPos.x + stickShadowLen, GROUND_HALF_SIZE);
+                    const clampedTalesTipX = Math.min(talesPos.x + talesShadowLen, GROUND_HALF_SIZE);
+
+                    const pyrCenter = new THREE.Vector3(0, 0.2, 0);
+                    const pyrTop = new THREE.Vector3(0, PYRAMID_HEIGHT, 0);
+                    const pyrEdge = new THREE.Vector3(HALF_BASE, 0.2, 0);
+                    const pyrTip = new THREE.Vector3(clampedPyrTipX, 0.2, 0);
+
+                    // Linha da sombra interna (quando transparente)
+                    if (isPyramidTransparent && totalPyrShadow > 0.05 && sunAngleDeg > 0.5) {
+                        const internalTipX = Math.min(totalPyrShadow, HALF_BASE);
+                        internalShadowLine.visible = true;
+                        internalShadowLine.geometry.setFromPoints([
+                            pyrCenter,
+                            new THREE.Vector3(internalTipX, 0.2, 0)
+                        ]);
+                    } else {
+                        internalShadowLine.visible = false;
+                    }
+
+                    // Linha da sombra externa e raio solar
+                    if (totalPyrShadow > HALF_BASE && sunAngleDeg > 0.5) {
+                        externalShadowLine.visible = true;
+                        pyrRayLine.visible = true;
+                        externalShadowLine.geometry.setFromPoints([pyrEdge, pyrTip]);
+                        pyrRayLine.geometry.setFromPoints([pyrTop, pyrTip]);
+                    } else if (isPyramidTransparent && totalPyrShadow > 0.05 && sunAngleDeg > 0.5) {
+                        externalShadowLine.visible = false;
+                        pyrRayLine.visible = true;
+                        pyrRayLine.geometry.setFromPoints([pyrTop, pyrTip]);
+                    } else {
+                        externalShadowLine.visible = false;
+                        pyrRayLine.visible = false;
+                    }
+
+                    // Bastão
+                    if (stickShadowLen > 0.05 && sunAngleDeg > 0.5) {
+                        stickShadowLine.visible = true;
+                        stickRayLine.visible = true;
+                        const stickTop = new THREE.Vector3(stickPos.x, STICK_HEIGHT, stickPos.z);
+                        const stickBase = new THREE.Vector3(stickPos.x, 0.2, stickPos.z);
+                        const stickTip = new THREE.Vector3(clampedStickTipX, 0.2, stickPos.z);
+                        stickShadowLine.geometry.setFromPoints([stickBase, stickTip]);
+                        stickRayLine.geometry.setFromPoints([stickTop, stickTip]);
+                    } else {
+                        stickShadowLine.visible = false;
+                        stickRayLine.visible = false;
+                    }
+
+                    // Tales (1,70m)
+                    if (talesShadowLen > 0.05 && sunAngleDeg > 0.5) {
+                        talesShadowLine.visible = true;
+                        talesRayLine.visible = true;
+                        const talesTop = new THREE.Vector3(talesPos.x, TALES_HEIGHT, talesPos.z);
+                        const talesBase = new THREE.Vector3(talesPos.x, 0.2, talesPos.z);
+                        const talesTip = new THREE.Vector3(clampedTalesTipX, 0.2, talesPos.z);
+                        talesShadowLine.geometry.setFromPoints([talesBase, talesTip]);
+                        talesRayLine.geometry.setFromPoints([talesTop, talesTip]);
+                    } else {
+                        talesShadowLine.visible = false;
+                        talesRayLine.visible = false;
+                    }
+
+                    // Conversão para metros reais
+                    const scale = 6.1;
+                    const realH = (PYRAMID_HEIGHT * scale).toFixed(1);
+                    const realTotalS = sunAngleDeg <= 0.5 ? '∞' : (totalPyrShadow * scale).toFixed(1) + 'm';
+                    const realHalfBase = (HALF_BASE * scale).toFixed(1);
+                    const realExtS = sunAngleDeg <= 0.5 ? '∞' : Math.max(0, (totalPyrShadow - HALF_BASE) * scale).toFixed(1) + 'm';
+
+                    const realh = (STICK_HEIGHT * scale / 10).toFixed(2);
+                    const reals = sunAngleDeg <= 0.5 ? '∞' : (stickShadowLen * scale / 10).toFixed(2) + 'm';
+
+                    const realTalesH = (TALES_HEIGHT * scale / 10).toFixed(2);
+                    const realTalesS = sunAngleDeg <= 0.5 ? '∞' : (talesShadowLen * scale / 10).toFixed(2) + 'm';
+
+                    const isZenith = sunAngleDeg >= 88.5;
+                    const isSunset = sunAngleDeg <= 1.5;
+                    const isOnFace = !isZenith && sunAngleDeg >= FACE_SLOPE_DEG;
+
+                    let statusMsg = `<span class="status-face">Sombra no deserto: ${realExtS} (+ ${realHalfBase}m da meia-base)</span>`;
+                    if (isZenith) {
+                        statusMsg = `<span class="status-zenith">☀ Sol a pino (90°): Nenhuma sombra projetada!</span>`;
+                    } else if (isSunset) {
+                        statusMsg = `<span class="status-face">🌇 Pôr do sol na borda do deserto (0°): Reiniciando...</span>`;
+                    } else if (isOnFace) {
+                        statusMsg = `<span class="status-face">Sombra apenas na própria face da pirâmide (ainda não saiu para fora da pirâmide)</span>`;
+                    }
+
+                    angleValText.textContent = `${sunAngleDeg.toFixed(1)}°`;
+                    mathOutput.innerHTML = `
+                        <div>Tales (h<sub>t</sub>): <strong style="color:#0f172a;">${realTalesH}m</strong> | Sombra (s<sub>t</sub>): ${realTalesS}</div>
+                        <div>Bastão (h): <strong style="color:#0f172a;">${realh}m</strong> | Sombra (s): ${reals}</div>
+                        <div>Pirâmide (H): <strong style="color:#0f172a;">${realH}m</strong> | Sombra Total (S): ${realTotalS}</div>
+                        <div style="margin-top:8px; font-size:0.78rem;">
+                            ${statusMsg}
+                        </div>
+                    `;
+                }
+
+                function animate() {
+                    requestAnimationFrame(animate);
+
+                    if (isAnimating) {
+                        sunAngleDeg -= 0.08;
+                        if (sunAngleDeg <= MIN_SUN_ANGLE) {
+                            sunAngleDeg = MAX_SUN_ANGLE;
+                        }
+                        slider.value = sunAngleDeg;
+                        updateGeometry();
+                    }
+
+                    controls.update();
+                    renderer.render(scene, camera);
+                }
+
+                window.addEventListener('resize', () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+
                 updateGeometry();
+                animate();
+            } catch (err) {
+                mathOutput.innerHTML = `<strong style="color:#dc2626;">Erro na simulação 3D: ${err.message}</strong>`;
             }
-
-            controls.update();
-            renderer.render(scene, camera);
-        }
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
         });
-
-        updateGeometry();
-        animate();
     </script>
 </body>
 </html>
